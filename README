@@ -1,14 +1,14 @@
 # Hello World
 
 This is a simple Hello World program in C++.
-Run using the following commands to ensure usage of C++20. 
+Run using the following commands to ensure usage of C++20. Ensure g++ is installed.
 
 Compile using:
-```bash
+```sh
 make
 ```
 
 Run using:
-```bash
+```sh
 ./hello_world
 ```
