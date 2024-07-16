@@ -1,18 +1,20 @@
 # Hello World
 
-This is a simple Hello World program in C++, which prints both Hello World! and the C++ version (which should always be C++20). If running via VS Code, ensure that the tasks.json file has -std=c++20 as an argument. 
+This is a simple Hello World program in C++, which prints both Hello World! and the C++ version. The desired C++ version is C++20.
 
-If using VS code, 
-Windows: Use the VS Code run button to run
-Mac: Use the VS Code run button to compile and then run via command line using the following line:
+The provided compilation method is CMake in the form of the CMakeLists.txt file. To compile using CMake, use the following commands after installing CMake. Minor modifications may be needed for Windows.
 
 ```sh
-./hello_world
+mkdir build
+cd build
+cmake ..
+cmake --build .
+./my_program
 ```
 
-Ensure g++ is installed. If on Windows, install using MinGW. 
+If running via VS Code, ensure that your generated tasks.json file has -std=c++20 as an argument.
 
-If you prefer to compile manually rather than through VS Code, you can compile using
+If you prefer to compile manually rather than through VS Code, you can compile using the following command, assuming you have g++ installed. 
 ```sh
 g++ -std=c++20 -g -o hello_world hello_world.cpp
 ```
