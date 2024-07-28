@@ -2,6 +2,10 @@
 #include <boost/graph/depth_first_search.hpp>
 #include <vector>
 #include <iostream>
+#include <random>
+#include "random_trees.h"
+
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> Graph;
 
 class post_order_visitor : public boost::default_dfs_visitor {
 public:
@@ -18,9 +22,9 @@ private:
     int index;
 };
 
-std::vector<int> get_children(int u, const std::vector<int>& postorder, const boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>& g) {
+std::vector<int> get_children(int u, const std::vector<int>& postorder, const Graph& g) {
     std::vector<int> children;
-    for (auto ei = boost::out_edges(u, g).first; ei != boost::out_edges(u, g).second; ++ei) {
+    for (auto ei = boost::out_edges(u, g).first; ei != boost::out_edges(u, g).second; ei++) {
         int v = boost::target(*ei, g);
         if (postorder[u] > postorder[v]) {
             children.push_back(v);
@@ -29,7 +33,7 @@ std::vector<int> get_children(int u, const std::vector<int>& postorder, const bo
     return children;
 }
 
-std::vector<int> get_grandchildren(const std::vector<int>& children, const std::vector<int>& postorder, const boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>& g) {
+std::vector<int> get_grandchildren(const std::vector<int>& children, const std::vector<int>& postorder, const Graph& g) {
     std::vector<int> grandchildren;
     for (int child : children) {
         auto child_children = get_children(child, postorder, g);
@@ -38,28 +42,9 @@ std::vector<int> get_grandchildren(const std::vector<int>& children, const std::
     return grandchildren;
 }
 
-int main() {
-    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> Graph;
-//    Graph g(5);
-//
-//    boost::add_edge(0, 1, g);
-//    boost::add_edge(0, 2, g);
-//    boost::add_edge(1, 3, g);
-//    boost::add_edge(1, 4, g);
 
-    Graph g(11);
-    boost::add_edge(0, 1, g);
-    boost::add_edge(0, 2, g);
-    boost::add_edge(1, 3, g);
-    boost::add_edge(1, 4, g);
-    boost::add_edge(1, 5, g);
-    boost::add_edge(4, 10, g);
-    boost::add_edge(2, 6, g);
-    boost::add_edge(6, 7, g);
-    boost::add_edge(7, 8, g);
-    boost::add_edge(7, 9, g);
-
-    int n = num_vertices(g);
+int num_ind_sets(const Graph& g) {
+     int n = num_vertices(g);
 
     std::vector<int> postorder(n);
 
@@ -114,7 +99,37 @@ int main() {
         }
     }
 
-    std::cout << "Number of independent sets: " << num_ind_sets[postorder_to_vertex[n-1]] << std::endl;
+    return num_ind_sets[postorder_to_vertex[n-1]];
+}
+
+int main() {
+//    Graph g(5);
+//
+//    boost::add_edge(0, 1, g);
+//    boost::add_edge(0, 2, g);
+//    boost::add_edge(1, 3, g);
+//    boost::add_edge(1, 4, g);
+
+    //Graph g(11);
+   // boost::add_edge(0, 1, g);
+   // boost::add_edge(0, 2, g);
+   // boost::add_edge(1, 3, g);
+   // boost::add_edge(1, 4, g);
+   // boost::add_edge(1, 5, g);
+   // boost::add_edge(4, 10, g);
+   // boost::add_edge(2, 6, g);
+   // boost::add_edge(6, 7, g);
+   // boost::add_edge(7, 8, g);
+   // boost::add_edge(7, 9, g);
+
+
+
+    //std::cout << "Number of independent sets: " << num_ind_sets(g) << std::endl;
+    std::vector<int> prufer_sequence = create_prufer_sequence(1000000);
+    print_prufer_sequence(prufer_sequence);
+    Graph g = prufer_sequence_to_tree(prufer_sequence);
+
+    tree_to_dot(g, "random_tree.dot");
 
     return 0;
 }

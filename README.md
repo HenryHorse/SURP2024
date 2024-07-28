@@ -1,6 +1,4 @@
-# Hello World
-
-This is a simple Hello World program in C++, which prints both Hello World! and the C++ version. The desired C++ version is C++20.
+# SURP 2024
 
 The provided compilation method is CMake in the form of the CMakeLists.txt file. To compile using CMake, use the following commands after installing CMake. Minor modifications may be needed for Windows.
 
