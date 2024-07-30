@@ -102,36 +102,41 @@ int num_ind_sets(const Graph& g) {
     return num_ind_sets[postorder_to_vertex[n-1]];
 }
 
-int main() {
-//    Graph g(5);
-//
-//    boost::add_edge(0, 1, g);
-//    boost::add_edge(0, 2, g);
-//    boost::add_edge(1, 3, g);
-//    boost::add_edge(1, 4, g);
-
-    //Graph g(11);
-   // boost::add_edge(0, 1, g);
-   // boost::add_edge(0, 2, g);
-   // boost::add_edge(1, 3, g);
-   // boost::add_edge(1, 4, g);
-   // boost::add_edge(1, 5, g);
-   // boost::add_edge(4, 10, g);
-   // boost::add_edge(2, 6, g);
-   // boost::add_edge(6, 7, g);
-   // boost::add_edge(7, 8, g);
-   // boost::add_edge(7, 9, g);
-
-
-
-    //std::cout << "Number of independent sets: " << num_ind_sets(g) << std::endl;
-    std::vector<int> prufer_sequence = create_prufer_sequence(1000000);
-    print_prufer_sequence(prufer_sequence);
-    Graph g = prufer_sequence_to_tree(prufer_sequence);
-
-    tree_to_dot(g, "random_tree.dot");
-
-    return 0;
+bool is_independent_set(const std::set<int>& independent_set, int vertex, const Graph& g) {
+    for (auto neighbor : boost::make_iterator_range(boost::adjacent_vertices(vertex, g))) {
+        if (independent_set.find(neighbor) != independent_set.end()) {
+            return false;
+        }
+    }
+    return true;
 }
+
+std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed) {
+    std::set<int> independent_set;
+    std::mt19937 rng(seed);
+    std::uniform_int_distribution<> vertex_picker(0, boost::num_vertices(g) - 1);
+    std::uniform_real_distribution<> percent_chance(0.0, 1.0);
+
+
+    for (int t = 0; t < T; t++) {
+        int vertex = vertex_picker(rng);
+
+        if (independent_set.find(vertex) != independent_set.end()) {
+            if (percent_chance(rng) < 0.5) {
+                independent_set.erase(vertex);
+            }
+        }
+        else if (is_independent_set(independent_set, vertex, g)) {
+            if (percent_chance(rng) < 0.5) {
+                independent_set.insert(vertex);
+            }
+        }
+    }
+
+    return independent_set;
+}
+
+
+
 
 

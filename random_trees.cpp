@@ -7,10 +7,9 @@
 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> Graph;
 
-std::vector<int> create_prufer_sequence(int num_vertices) {
+std::vector<int> create_prufer_sequence(int num_vertices, unsigned int seed) {
     std::vector<int> prufer_sequence(num_vertices - 2);
-    std::random_device rd;
-    std::mt19937 rng(rd()); // Mersenne Twister RNG, C++ way of generating random numbers
+    std::mt19937 rng(seed); // Mersenne Twister RNG, C++ way of generating random numbers
     std::uniform_int_distribution<> dist(0, num_vertices - 1);
 
     for (int i = 0; i < num_vertices - 2; i++) {

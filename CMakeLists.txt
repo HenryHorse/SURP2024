@@ -13,11 +13,12 @@ find_package(Boost 1.83 REQUIRED COMPONENTS graph)
 
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(graph graph.cpp
+    add_executable(test test.cpp
+            graph.cpp
+            graph.h
             random_trees.cpp
-            random_trees.h
-    )
-    target_link_libraries(graph ${Boost_LIBRARIES})
+            random_trees.h)
+    target_link_libraries(test ${Boost_LIBRARIES})
 else()
     message(FATAL_ERROR "Could not find Boost")
 endif()
