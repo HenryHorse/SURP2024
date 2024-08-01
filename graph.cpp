@@ -4,6 +4,8 @@
 #include <iostream>
 #include <random>
 #include "random_trees.h"
+#include <cmath>
+#include <boost/graph/copy.hpp>
 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> Graph;
 
@@ -51,47 +53,36 @@ int num_ind_sets(const Graph& g) {
     post_order_visitor vis(postorder);
     boost::depth_first_search(g, visitor(vis));
 
+    // A list that allows for converting back to the vertex index from its post order number
     std::vector<int> postorder_to_vertex(n);
-    for (int i = 0; i < n; ++i) {
-//        std::cout << i; // Vertex number
-//        std::cout << postorder[i] << std::endl; // Postorder index
+    for (int i = 0; i < n; i++) {
         postorder_to_vertex[postorder[i]] = i;
     }
 
-    std::unordered_map<int, int> num_ind_sets;
+    std::unordered_map<int, double> num_ind_sets;
 
     for (int i = 0; i < n; ++i) {
         int vertex = postorder_to_vertex[i];
         auto children = get_children(vertex, postorder, g);
         auto grandchildren = get_grandchildren(children, postorder, g);
-//        std::cout << "Vertex " << vertex << ":\n";
-//        std::cout << "  Children: ";
-//        for (int child : children) {
-//            std::cout << child << " ";
-//        }
-//        std::cout << "\n  Grandchildren: ";
-//        for (int grandchild : grandchildren) {
-//            std::cout << grandchild << " ";
-//        }
-//        std::cout << std::endl;
 
         if (children.empty() && grandchildren.empty()) {
             num_ind_sets[vertex] = 2;
         }
         else if (grandchildren.empty()) {
-            int product = 1;
+            double product = 1;
             for (int child : children) {
                 product *= num_ind_sets[child];
             }
             num_ind_sets[vertex] = product + 1;
         }
         else {
-            int product_children = 1;
+            double product_children = 1;
             for (int child : children) {
                 product_children *= num_ind_sets[child];
             }
 
-            int product_grandchildren = 1;
+            double product_grandchildren = 1;
             for (int grandchild : grandchildren) {
                 product_grandchildren *= num_ind_sets[grandchild];
             }
@@ -104,7 +95,7 @@ int num_ind_sets(const Graph& g) {
 
 bool is_independent_set(const std::set<int>& independent_set, int vertex, const Graph& g) {
     for (auto neighbor : boost::make_iterator_range(boost::adjacent_vertices(vertex, g))) {
-        if (independent_set.find(neighbor) != independent_set.end()) {
+        if (independent_set.contains(neighbor)) {
             return false;
         }
     }
@@ -121,7 +112,7 @@ std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed) {
     for (int t = 0; t < T; t++) {
         int vertex = vertex_picker(rng);
 
-        if (independent_set.find(vertex) != independent_set.end()) {
+        if (independent_set.contains(vertex)) {
             if (percent_chance(rng) < 0.5) {
                 independent_set.erase(vertex);
             }
@@ -136,6 +127,47 @@ std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed) {
     return independent_set;
 }
 
+
+double counting_reduction(const Graph& g0, int T, double K) {
+    Graph gi;
+    boost::copy_graph(g0, gi);
+
+    auto edges = boost::edges(gi);
+    std::vector<Graph::edge_descriptor> edges_list(edges.first, edges.second);
+    int m = boost::num_edges(gi);
+
+    double alpha = 1;
+
+    std::random_device rd;
+
+    for (int i = 0; i < m; i++) {
+        auto edge = edges_list[i];
+        int removed_edge_source = boost::source(edge, gi);
+        int removed_edge_target = boost::target(edge, gi);
+
+
+        boost::remove_edge(edge, gi);
+        // If this is the last edge (the Mth edge), alpha is 2^n
+        if (i == edges_list.size() - 1) {
+            alpha *= pow(2, num_vertices(gi));
+        }
+        else {
+            int num_invalid_sets = 0;
+            // K is the total number of samples
+            for (int i = 0; i < K; i++) {
+                std::set<int> sample = glauber_dynamics(gi, T, rd());
+                if (sample.contains(removed_edge_source) && sample.contains(removed_edge_target)) {
+                    num_invalid_sets++;
+                }
+            }
+            // The ratio that I multiply alpha by is the number of sets I sampled from Gi+1 that were also independent sets in Gi over the total number of sets I sampled.
+            alpha *= (K - num_invalid_sets) / K;
+        }
+    }
+
+    return alpha;
+
+}
 
 
 

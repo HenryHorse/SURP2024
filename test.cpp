@@ -10,8 +10,12 @@ void print_set(std::set<int> set) {
 }
 
 
-void try_num_ind_sets(const Graph& g) {
+void try_num_ind_sets() {
+    std::random_device rd;
+    std::vector<int> prufer_sequence = create_prufer_sequence(68, 18000);
+    Graph g = prufer_sequence_to_tree(prufer_sequence);
     std::cout << "Number of independent sets: " << num_ind_sets(g) << std::endl;
+
 }
 
 void try_prufer_sequence() {
@@ -116,6 +120,25 @@ void glauber_prufer_test() {
 }
 
 
+void compare_counting_to_actual() {
+    std::random_device rd;
+    for (int n = 10; n < 1000; n += 10) {
+        std::vector<int> prufer_sequence = create_prufer_sequence(n, rd());
+        Graph g = prufer_sequence_to_tree(prufer_sequence);
+
+        std::cout << "Tree of Size: " << n << std::endl;
+
+        double actual_num_sets = num_ind_sets(g);
+        double estimated_num_sets = counting_reduction(g, 1000, 1000);
+
+        std::cout << "Actual Number of Sets: " << actual_num_sets << std::endl;
+        std::cout << "Estimated Number of Sets: " << estimated_num_sets << std::endl;
+        std::cout << "Difference Between Actual and Estimated: " << actual_num_sets - estimated_num_sets << std::endl;
+
+    }
+
+}
+
 int main() {
     Graph g1(5);
     boost::add_edge(0, 1, g1);
@@ -136,17 +159,21 @@ int main() {
     boost::add_edge(7, 9, g2);
 
 
-    tree_to_dot(g1, "g1.dot");
-    tree_to_dot(g2, "g2.dot");
+//    tree_to_dot(g1, "g1.dot");
+//    tree_to_dot(g2, "g2.dot");
 
-//    try_num_ind_sets(g2);
+//    try_num_ind_sets();
 //    try_prufer_sequence();
 //    try_glauber_dynamics(g2);
 
-    glauber_test1();
-    glauber_test2();
-    glauber_test3();
-    glauber_prufer_test();
+//    glauber_test1();
+//    glauber_test2();
+//    glauber_test3();
+//    glauber_prufer_test();
+
+//    std::cout << num_ind_sets(g2) << std::endl;
+//    counting_reduction(g2);
+    compare_counting_to_actual();
 
     return 0;
 }

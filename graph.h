@@ -19,5 +19,6 @@ std::vector<int> get_grandchildren(const std::vector<int>& children, const std::
 int num_ind_sets(const Graph& g);
 bool is_independent_set(const std::set<int>& independent_set, int vertex, const Graph& g);
 std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed);
+double counting_reduction(const Graph& g0, int T, double K);
 
 #endif //SURP2024_GRAPH_H
