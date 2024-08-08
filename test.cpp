@@ -123,19 +123,20 @@ void glauber_prufer_test() {
 
 void compare_counting_to_actual() {
     std::random_device rd;
-    for (int n = 10; n < 1000; n += 100) {
+    for (int n = 10; n < 10000; n += 100) {
         std::vector<int> prufer_sequence = create_prufer_sequence(n, rd());
         Graph g = prufer_sequence_to_tree(prufer_sequence);
 
         std::cout << "Tree of Size: " << n << std::endl;
 
         double actual_num_sets = num_ind_sets(g);
-        double estimated_num_sets = counting_reduction(g, 1000, 1000);
+        double estimated_num_sets = alternate_counting_reduction(g, 100, 10000);
 
         std::cout << "Actual Number of Sets: " << actual_num_sets << std::endl;
         std::cout << "Estimated Number of Sets: " << estimated_num_sets << std::endl;
         std::cout << "Difference Between Actual and Estimated: " << actual_num_sets - estimated_num_sets << std::endl;
         std::cout << "Percent Error: " << (abs(actual_num_sets - estimated_num_sets) / actual_num_sets) * 100 << std::endl;
+        std::cout << std::endl;
 
     }
 
