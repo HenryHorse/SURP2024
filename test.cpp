@@ -1,5 +1,6 @@
 #include "random_trees.h"
 #include "graph.h"
+#include <thread>
 
 
 
@@ -122,7 +123,7 @@ void glauber_prufer_test() {
 
 void compare_counting_to_actual() {
     std::random_device rd;
-    for (int n = 10; n < 1000; n += 10) {
+    for (int n = 10; n < 1000; n += 100) {
         std::vector<int> prufer_sequence = create_prufer_sequence(n, rd());
         Graph g = prufer_sequence_to_tree(prufer_sequence);
 
@@ -134,6 +135,7 @@ void compare_counting_to_actual() {
         std::cout << "Actual Number of Sets: " << actual_num_sets << std::endl;
         std::cout << "Estimated Number of Sets: " << estimated_num_sets << std::endl;
         std::cout << "Difference Between Actual and Estimated: " << actual_num_sets - estimated_num_sets << std::endl;
+        std::cout << "Percent Error: " << (abs(actual_num_sets - estimated_num_sets) / actual_num_sets) * 100 << std::endl;
 
     }
 
@@ -173,6 +175,9 @@ int main() {
 
 //    std::cout << num_ind_sets(g2) << std::endl;
 //    counting_reduction(g2);
+
+//    const auto processor_count = std::thread::hardware_concurrency();
+//    std::cout << processor_count << std::endl;
     compare_counting_to_actual();
 
     return 0;

@@ -6,6 +6,9 @@
 #include "random_trees.h"
 #include <cmath>
 #include <boost/graph/copy.hpp>
+#include <future>
+#include <thread>
+
 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> Graph;
 
@@ -146,19 +149,34 @@ double counting_reduction(const Graph& g0, int T, double K) {
         int removed_edge_target = boost::target(edge, gi);
 
 
+
         boost::remove_edge(edge, gi);
         // If this is the last edge (the Mth edge), alpha is 2^n
         if (i == edges_list.size() - 1) {
             alpha *= pow(2, num_vertices(gi));
         }
         else {
-            int num_invalid_sets = 0;
+            double num_invalid_sets = 0;
+
+            // This is a vector of "futures", which are values (in this case sets of integers) that will be determined at a later time
+            // futures.get() as used later will wait until the value is determined before continuing onwards
+            // This allows me to asynchronously launch a bunch of samples at one time instead of just one
+            std::vector<std::future<std::set<int>>> futures;
+            int batch_size = std::thread::hardware_concurrency();
+
             // K is the total number of samples
-            for (int i = 0; i < K; i++) {
-                std::set<int> sample = glauber_dynamics(gi, T, rd());
-                if (sample.contains(removed_edge_source) && sample.contains(removed_edge_target)) {
-                    num_invalid_sets++;
+            for (int j = 0; j < K; j+=batch_size) {
+                for (int k = 0; k < batch_size && j + k < K; k++) {
+                    unsigned int seed = rd();
+                    futures.push_back(std::async(std::launch::async, glauber_dynamics, std::ref(gi), T, seed));
                 }
+                for (auto& future : futures) {
+                    std::set<int> sample = future.get();
+                    if (sample.contains(removed_edge_source) && sample.contains(removed_edge_target)) {
+                        num_invalid_sets++;
+                    }
+                }
+                futures.clear();
             }
             // The ratio that I multiply alpha by is the number of sets I sampled from Gi+1 that were also independent sets in Gi over the total number of sets I sampled.
             alpha *= (K - num_invalid_sets) / K;
