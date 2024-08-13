@@ -16,7 +16,7 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> Grap
 std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed);
 std::vector<int> get_children(int u, const std::vector<int>& postorder, const Graph& g);
 std::vector<int> get_grandchildren(const std::vector<int>& children, const std::vector<int>& postorder, const Graph& g);
-int num_ind_sets(const Graph& g);
+double num_ind_sets(const Graph& g, int root);
 bool is_independent_set(const std::set<int>& independent_set, int vertex, const Graph& g);
 std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed);
 double counting_reduction(const Graph& g0, int T, double K);

@@ -48,13 +48,13 @@ std::vector<int> get_grandchildren(const std::vector<int>& children, const std::
 }
 
 
-int num_ind_sets(const Graph& g) {
+double num_ind_sets(const Graph& g, int root) {
      int n = num_vertices(g);
 
     std::vector<int> postorder(n);
 
     post_order_visitor vis(postorder);
-    boost::depth_first_search(g, visitor(vis));
+    boost::depth_first_search(g, visitor(vis).root_vertex(root));
 
     // A list that allows for converting back to the vertex index from its post order number
     std::vector<int> postorder_to_vertex(n);
@@ -188,39 +188,52 @@ double counting_reduction(const Graph& g0, int T, double K) {
 }
 
 
-double alternate_counting_reduction(const Graph& g0, int T, double K) {
+void alternate_counting_reduction(const Graph& g0, int T, double K) {
     Graph gi;
     boost::copy_graph(g0, gi);
 
     auto edges = boost::edges(gi);
     std::vector<Graph::edge_descriptor> edges_list(edges.first, edges.second);
 
-    double alpha = 1;
-
     std::random_device rd;
     std::mt19937 rng(rd());
     std::uniform_int_distribution<> edge_picker(0, boost::num_edges(gi) - 1);
 
     // Get number of independent sets using dynamic programming before removing edge
-    double G0_num_sets = static_cast<double>(num_ind_sets(gi));
+    double G0_num_sets = static_cast<double>(num_ind_sets(gi, 0));
+    std::cout << G0_num_sets << std::endl;
+    tree_to_dot(gi, "before_removed_edge.dot");
 
+    // Randomly remove an edge
     int random_edge_index = edge_picker(rng);
     auto edge = edges_list[random_edge_index];
     int removed_edge_source = boost::source(edge, gi);
     int removed_edge_target = boost::target(edge, gi);
     boost::remove_edge(edge, gi);
+    tree_to_dot(gi, "removed_edge.dot");
 
-    // Get number of independent sets using dynamic programming after removing edge
-    double G1_num_sets = static_cast<double>(num_ind_sets(gi));
+    // Now that we've removed an edge, the graph has 2 components.
+    // We need to find the number of independent sets in each component and then multiply them together for the total number.
+    // The removed edge's nodes are both "roots", one of the new tree and one of the original tree
+    // The node in the original tree is not guaranteed to be the original root, but will still work for num_ind_sets
+    int root1 = removed_edge_source;
+    int root2 = removed_edge_target;
+    double G1_component1_sets = num_ind_sets(gi, root1);
+    double G1_component2_sets = num_ind_sets(gi, root2);
+
+    // Multiply the number of independent sets in each component together to get total number of sets
+    double G1_num_sets = G1_component1_sets * G1_component2_sets;
+    std::cout << G1_num_sets << std::endl;
+
     double G0G1ratio = G0_num_sets / G1_num_sets;
     std::cout << "Actual Ratio: " << G0G1ratio << std::endl;
 
-    double num_invalid_sets = 0;
 
+    // The following is code to get an estimated ratio
     std::vector<std::future<std::set<int>>> futures;
     int batch_size = std::thread::hardware_concurrency();
 
-
+    double num_invalid_sets = 0;
 
     // K is the total number of samples
     for (int j = 0; j < K; j += batch_size) {
@@ -237,10 +250,8 @@ double alternate_counting_reduction(const Graph& g0, int T, double K) {
         futures.clear();
     }
     double estimated_ratio = (K - num_invalid_sets) / K;
-    alpha *= estimated_ratio;
     std::cout << "Estimated Ratio: " << estimated_ratio << std::endl;
-
-    return alpha * pow(2, num_vertices(gi));
+    std::cout << std::endl;
 }
 
 

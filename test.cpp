@@ -15,7 +15,7 @@ void try_num_ind_sets() {
     std::random_device rd;
     std::vector<int> prufer_sequence = create_prufer_sequence(68, 18000);
     Graph g = prufer_sequence_to_tree(prufer_sequence);
-    std::cout << "Number of independent sets: " << num_ind_sets(g) << std::endl;
+    std::cout << "Number of independent sets: " << num_ind_sets(g, 0) << std::endl;
 
 }
 
@@ -123,14 +123,14 @@ void glauber_prufer_test() {
 
 void compare_counting_to_actual() {
     std::random_device rd;
-    for (int n = 10; n < 10000; n += 100) {
+    for (int n = 10; n < 1000; n += 100) {
         std::vector<int> prufer_sequence = create_prufer_sequence(n, rd());
         Graph g = prufer_sequence_to_tree(prufer_sequence);
 
         std::cout << "Tree of Size: " << n << std::endl;
 
-        double actual_num_sets = num_ind_sets(g);
-        double estimated_num_sets = alternate_counting_reduction(g, 100, 10000);
+        double actual_num_sets = num_ind_sets(g, 0);
+        double estimated_num_sets = counting_reduction(g, 100, 10000);
 
         std::cout << "Actual Number of Sets: " << actual_num_sets << std::endl;
         std::cout << "Estimated Number of Sets: " << estimated_num_sets << std::endl;
@@ -141,6 +141,23 @@ void compare_counting_to_actual() {
     }
 
 }
+
+
+void compare_alternate_counting_to_actual() {
+    std::random_device rd;
+    for (int n = 10; n < 1000; n += 100) {
+        std::vector<int> prufer_sequence = create_prufer_sequence(n, rd());
+        Graph g = prufer_sequence_to_tree(prufer_sequence);
+
+        std::cout << "Tree of Size: " << n << std::endl;
+
+        double actual_num_sets = num_ind_sets(g, 0);
+        alternate_counting_reduction(g, 100, 10000);
+
+    }
+
+}
+
 
 int main() {
     Graph g1(5);
@@ -179,7 +196,8 @@ int main() {
 
 //    const auto processor_count = std::thread::hardware_concurrency();
 //    std::cout << processor_count << std::endl;
-    compare_counting_to_actual();
+//    compare_counting_to_actual();
+    compare_alternate_counting_to_actual();
 
     return 0;
 }
