@@ -3,6 +3,7 @@
 #include <thread>
 
 
+double lambda = 0.001;
 
 void print_set(std::set<int> set) {
     for (int vertex : set) {
@@ -15,7 +16,7 @@ void try_num_ind_sets() {
     std::random_device rd;
     std::vector<int> prufer_sequence = create_prufer_sequence(68, 18000);
     Graph g = prufer_sequence_to_tree(prufer_sequence);
-    std::cout << "Number of independent sets: " << num_ind_sets(g, 0) << std::endl;
+    std::cout << "Number of independent sets: " << num_ind_sets(g, 0, lambda) << std::endl;
 
 }
 
@@ -30,7 +31,7 @@ void try_prufer_sequence() {
 
 void try_glauber_dynamics(const Graph &g) {
     std::random_device rd;
-    std::set<int> independent_set = glauber_dynamics(g, 1000, rd());
+    std::set<int> independent_set = glauber_dynamics(g, 1000, rd(), lambda);
     for (int vertex : independent_set) {
         std::cout << vertex << " ";
     }
@@ -44,7 +45,7 @@ void glauber_test1() {
     boost::add_edge(1, 3, g);
     boost::add_edge(1, 4, g);
 
-    std::set<int> independent_set = glauber_dynamics(g, 1000, 1337);
+    std::set<int> independent_set = glauber_dynamics(g, 1000, 1337, lambda);
     std::set<int> expected_set = {4};
 
     if (independent_set == expected_set) {
@@ -68,7 +69,7 @@ void glauber_test2() {
     boost::add_edge(7, 8, g);
     boost::add_edge(7, 9, g);
 
-    std::set<int> independent_set = glauber_dynamics(g, 1000, 1337);
+    std::set<int> independent_set = glauber_dynamics(g, 1000, 1337, lambda);
     std::set<int> expected_set = {0, 3, 5};
 
     if (independent_set == expected_set) {
@@ -92,7 +93,7 @@ void glauber_test3() {
     boost::add_edge(7, 8, g);
     boost::add_edge(7, 9, g);
 
-    std::set<int> independent_set = glauber_dynamics(g, 100000, 007);
+    std::set<int> independent_set = glauber_dynamics(g, 100000, 007, lambda);
     std::set<int> expected_set = {2, 9, 10};
 
     if (independent_set == expected_set) {
@@ -108,7 +109,7 @@ void glauber_prufer_test() {
     Graph g = prufer_sequence_to_tree(prufer_sequence);
     tree_to_dot(g, "glauber_prufer.dot");
 
-    std::set<int> independent_set = glauber_dynamics(g, 10000, 1337);
+    std::set<int> independent_set = glauber_dynamics(g, 10000, 1337, lambda);
     print_set(independent_set);
     std::set<int> expected_set = {4};
 
@@ -129,8 +130,8 @@ void compare_counting_to_actual() {
 
         std::cout << "Tree of Size: " << n << std::endl;
 
-        double actual_num_sets = num_ind_sets(g, 0);
-        double estimated_num_sets = counting_reduction(g, 100, 10000);
+        double actual_num_sets = num_ind_sets(g, 0, lambda);
+        double estimated_num_sets = counting_reduction(g, 10000, 100, lambda);
 
         std::cout << "Actual Number of Sets: " << actual_num_sets << std::endl;
         std::cout << "Estimated Number of Sets: " << estimated_num_sets << std::endl;
@@ -151,8 +152,8 @@ void compare_alternate_counting_to_actual() {
 
         std::cout << "Tree of Size: " << n << std::endl;
 
-        double actual_num_sets = num_ind_sets(g, 0);
-        alternate_counting_reduction(g, 100, 10000);
+        double actual_num_sets = num_ind_sets(g, 0, lambda);
+        alternate_counting_reduction(g, 10000, 100, lambda);
 
     }
 

@@ -48,7 +48,7 @@ std::vector<int> get_grandchildren(const std::vector<int>& children, const std::
 }
 
 
-double num_ind_sets(const Graph& g, int root) {
+double num_ind_sets(const Graph& g, int root, double lambda) {
      int n = num_vertices(g);
 
     std::vector<int> postorder(n);
@@ -89,7 +89,7 @@ double num_ind_sets(const Graph& g, int root) {
             for (int grandchild : grandchildren) {
                 product_grandchildren *= num_ind_sets[grandchild];
             }
-            num_ind_sets[vertex] = product_children + product_grandchildren;
+            num_ind_sets[vertex] = product_children + lambda * product_grandchildren;
         }
     }
 
@@ -98,14 +98,14 @@ double num_ind_sets(const Graph& g, int root) {
 
 bool is_independent_set(const std::set<int>& independent_set, int vertex, const Graph& g) {
     for (auto neighbor : boost::make_iterator_range(boost::adjacent_vertices(vertex, g))) {
-        if (independent_set.contains(neighbor)) {
+        if (independent_set.find(neighbor) != independent_set.end()) {
             return false;
         }
     }
     return true;
 }
 
-std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed) {
+std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed, double lambda) {
     std::set<int> independent_set;
     std::mt19937 rng(seed);
     std::uniform_int_distribution<> vertex_picker(0, boost::num_vertices(g) - 1);
@@ -116,12 +116,12 @@ std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed) {
         int vertex = vertex_picker(rng);
 
         if (independent_set.contains(vertex)) {
-            if (percent_chance(rng) < 0.5) {
+            if (percent_chance(rng) <  1 / (1 + lambda)) {
                 independent_set.erase(vertex);
             }
         }
         else if (is_independent_set(independent_set, vertex, g)) {
-            if (percent_chance(rng) < 0.5) {
+            if (percent_chance(rng) < lambda / (1 + lambda)) {
                 independent_set.insert(vertex);
             }
         }
@@ -131,7 +131,7 @@ std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed) {
 }
 
 
-double counting_reduction(const Graph& g0, int T, double K) {
+double counting_reduction(const Graph& g0, int T, double K, double lambda) {
     Graph gi;
     boost::copy_graph(g0, gi);
 
@@ -168,11 +168,11 @@ double counting_reduction(const Graph& g0, int T, double K) {
             for (int j = 0; j < K; j+=batch_size) {
                 for (int k = 0; k < batch_size && j + k < K; k++) {
                     unsigned int seed = rd();
-                    futures.push_back(std::async(std::launch::async, glauber_dynamics, std::ref(gi), T, seed));
+                    futures.push_back(std::async(std::launch::async, glauber_dynamics, std::ref(gi), T, seed, lambda));
                 }
                 for (auto& future : futures) {
                     std::set<int> sample = future.get();
-                    if (sample.contains(removed_edge_source) && sample.contains(removed_edge_target)) {
+                    if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
                         num_invalid_sets++;
                     }
                 }
@@ -188,7 +188,7 @@ double counting_reduction(const Graph& g0, int T, double K) {
 }
 
 
-void alternate_counting_reduction(const Graph& g0, int T, double K) {
+void alternate_counting_reduction(const Graph& g0, int T, double K, double lambda) {
     Graph gi;
     boost::copy_graph(g0, gi);
 
@@ -200,7 +200,7 @@ void alternate_counting_reduction(const Graph& g0, int T, double K) {
     std::uniform_int_distribution<> edge_picker(0, boost::num_edges(gi) - 1);
 
     // Get number of independent sets using dynamic programming before removing edge
-    double G0_num_sets = static_cast<double>(num_ind_sets(gi, 0));
+    double G0_num_sets = num_ind_sets(gi, 0, lambda);
     std::cout << G0_num_sets << std::endl;
     tree_to_dot(gi, "before_removed_edge.dot");
 
@@ -218,8 +218,8 @@ void alternate_counting_reduction(const Graph& g0, int T, double K) {
     // The node in the original tree is not guaranteed to be the original root, but will still work for num_ind_sets
     int root1 = removed_edge_source;
     int root2 = removed_edge_target;
-    double G1_component1_sets = num_ind_sets(gi, root1);
-    double G1_component2_sets = num_ind_sets(gi, root2);
+    double G1_component1_sets = num_ind_sets(gi, root1, lambda);
+    double G1_component2_sets = num_ind_sets(gi, root2, lambda);
 
     // Multiply the number of independent sets in each component together to get total number of sets
     double G1_num_sets = G1_component1_sets * G1_component2_sets;
@@ -239,11 +239,11 @@ void alternate_counting_reduction(const Graph& g0, int T, double K) {
     for (int j = 0; j < K; j += batch_size) {
         for (int k = 0; k < batch_size && j + k < K; k++) {
             unsigned int seed = rd();
-            futures.push_back(std::async(std::launch::async, glauber_dynamics, std::ref(gi), T, seed));
+            futures.push_back(std::async(std::launch::async, glauber_dynamics, std::ref(gi), T, seed, lambda));
         }
         for (auto &future: futures) {
             std::set<int> sample = future.get();
-            if (sample.contains(removed_edge_source) && sample.contains(removed_edge_target)) {
+            if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
                 num_invalid_sets++;
             }
         }
