@@ -2,6 +2,8 @@
 #include "graph.h"
 #include <thread>
 
+#include <mpi.h>
+
 
 double lambda = 0.001;
 
@@ -160,7 +162,7 @@ void compare_alternate_counting_to_actual() {
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
     Graph g1(5);
     boost::add_edge(0, 1, g1);
     boost::add_edge(0, 2, g1);
@@ -195,10 +197,11 @@ int main() {
 //    std::cout << num_ind_sets(g2) << std::endl;
 //    counting_reduction(g2);
 
-//    const auto processor_count = std::thread::hardware_concurrency();
-//    std::cout << processor_count << std::endl;
-//    compare_counting_to_actual();
-    compare_alternate_counting_to_actual();
+
+    MPI_Init(&argc, &argv);
+
+    compare_counting_to_actual();
+//    compare_alternate_counting_to_actual();
 
     return 0;
 }

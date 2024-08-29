@@ -9,6 +9,7 @@
 #include <future>
 #include <thread>
 
+#include <mpi.h>
 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> Graph;
 
@@ -115,7 +116,7 @@ std::set<int> glauber_dynamics(const Graph& g, int T, unsigned int seed, double 
     for (int t = 0; t < T; t++) {
         int vertex = vertex_picker(rng);
 
-        if (independent_set.contains(vertex)) {
+        if (independent_set.find(vertex) != independent_set.end()) {
             if (percent_chance(rng) <  1 / (1 + lambda)) {
                 independent_set.erase(vertex);
             }
@@ -143,6 +144,15 @@ double counting_reduction(const Graph& g0, int T, double K, double lambda) {
 
     std::random_device rd;
 
+    int num_processes;
+    int rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    int samples_per_process = K / num_processes;
+    int remaining_samples = int(K) % num_processes;
+
+
     for (int i = 0; i < m; i++) {
         auto edge = edges_list[i];
         int removed_edge_source = boost::source(edge, gi);
@@ -156,30 +166,34 @@ double counting_reduction(const Graph& g0, int T, double K, double lambda) {
             alpha *= pow(2, num_vertices(gi));
         }
         else {
-            double num_invalid_sets = 0;
+            double local_invalid_sets = 0;
 
-            // This is a vector of "futures", which are values (in this case sets of integers) that will be determined at a later time
-            // futures.get() as used later will wait until the value is determined before continuing onwards
-            // This allows me to asynchronously launch a bunch of samples at one time instead of just one
-            std::vector<std::future<std::set<int>>> futures;
-            int batch_size = std::thread::hardware_concurrency();
-
-            // K is the total number of samples
-            for (int j = 0; j < K; j+=batch_size) {
-                for (int k = 0; k < batch_size && j + k < K; k++) {
-                    unsigned int seed = rd();
-                    futures.push_back(std::async(std::launch::async, glauber_dynamics, std::ref(gi), T, seed, lambda));
+            for (int j = 0; j < samples_per_process; j++) {
+                std::set<int> sample = glauber_dynamics(gi, T, rd(), lambda);
+                if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
+                    local_invalid_sets++;
                 }
-                for (auto& future : futures) {
-                    std::set<int> sample = future.get();
+            }
+
+            if (rank == 0 && remaining_samples > 0) {
+                for (int j = 0; j < remaining_samples; j++) {
+                    std::set<int> sample = glauber_dynamics(gi, T, rd(), lambda);
                     if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
-                        num_invalid_sets++;
+                        local_invalid_sets++;
                     }
                 }
-                futures.clear();
             }
-            // The ratio that I multiply alpha by is the number of sets I sampled from Gi+1 that were also independent sets in Gi over the total number of sets I sampled.
-            alpha *= (K - num_invalid_sets) / K;
+
+            double total_invalid_sets = 0;
+            MPI_Reduce(&local_invalid_sets, &total_invalid_sets, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+            if (rank == 0) {
+                // The ratio that I multiply alpha by is the number of sets I sampled from Gi+1 that were also independent sets in Gi over the total number of sets I sampled.
+                alpha *= (K - total_invalid_sets) / K;
+            }
+
+            MPI_Bcast(&alpha, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
         }
     }
 
@@ -236,18 +250,11 @@ void alternate_counting_reduction(const Graph& g0, int T, double K, double lambd
     double num_invalid_sets = 0;
 
     // K is the total number of samples
-    for (int j = 0; j < K; j += batch_size) {
-        for (int k = 0; k < batch_size && j + k < K; k++) {
-            unsigned int seed = rd();
-            futures.push_back(std::async(std::launch::async, glauber_dynamics, std::ref(gi), T, seed, lambda));
+    for (int i = 0; i < K; i++) {
+        std::set<int> sample = glauber_dynamics(gi, T, rd(), lambda);
+        if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
+            num_invalid_sets++;
         }
-        for (auto &future: futures) {
-            std::set<int> sample = future.get();
-            if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
-                num_invalid_sets++;
-            }
-        }
-        futures.clear();
     }
     double estimated_ratio = (K - num_invalid_sets) / K;
     std::cout << "Estimated Ratio: " << estimated_ratio << std::endl;
