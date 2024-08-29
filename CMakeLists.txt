@@ -3,9 +3,12 @@ cmake_minimum_required(VERSION 3.10)
 
 project(SURP2024)
 
-
+find_package(MPI REQUIRED)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+include_directories(${MPI_INCLUDE_PATH})
+set(CMAKE_CXX_COMPILER mpic++)
 
 add_executable(hello_world hello_world.cpp)
 
