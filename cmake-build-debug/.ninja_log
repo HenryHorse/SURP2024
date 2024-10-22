@@ -1,0 +1,6 @@
+# ninja log v5
+10	1425	1729632226908460519	CMakeFiles/test.dir/test.cpp.o	395ab7a1a3396b5b
+12	1756	1729632210535140739	CMakeFiles/test.dir/graph.cpp.o	6eb866cd96d04ea1
+1	2331	1727384720172169432	CMakeFiles/test.dir/random_trees.cpp.o	ac71f7f38ad1939
+1425	1475	1729632226965862249	test	5fff2870cc48f114
+12	1604	1729632210385792385	CMakeFiles/test.dir/dynamic_programming.cpp.o	fb1676f357778476

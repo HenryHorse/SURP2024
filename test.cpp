@@ -1,11 +1,10 @@
 #include "random_trees.h"
-#include "graph.h"
+#include "dynamic_programming.h"
+#include "glauber_dynamics.h"
 #include <thread>
 
-#include <mpi.h>
 
-
-double lambda = 0.001;
+double lambda = 1;
 
 void print_set(std::set<int> set) {
     for (int vertex : set) {
@@ -24,7 +23,7 @@ void try_num_ind_sets() {
 
 void try_prufer_sequence() {
     std::random_device rd;
-    std::vector<int> prufer_sequence = create_prufer_sequence(1000, rd());
+    std::vector<int> prufer_sequence = create_prufer_sequence(20, rd());
     print_prufer_sequence(prufer_sequence);
     Graph g = prufer_sequence_to_tree(prufer_sequence);
 
@@ -126,7 +125,7 @@ void glauber_prufer_test() {
 
 void compare_counting_to_actual() {
     std::random_device rd;
-    for (int n = 10; n < 1000; n += 100) {
+    for (int n = 999; n < 1000; n += 100) {
         std::vector<int> prufer_sequence = create_prufer_sequence(n, rd());
         Graph g = prufer_sequence_to_tree(prufer_sequence);
 
@@ -162,7 +161,7 @@ void compare_alternate_counting_to_actual() {
 }
 
 
-int main(int argc, char *argv[]) {
+int main() {
     Graph g1(5);
     boost::add_edge(0, 1, g1);
     boost::add_edge(0, 2, g1);
@@ -197,11 +196,10 @@ int main(int argc, char *argv[]) {
 //    std::cout << num_ind_sets(g2) << std::endl;
 //    counting_reduction(g2);
 
-
-    MPI_Init(&argc, &argv);
-
-    compare_counting_to_actual();
-//    compare_alternate_counting_to_actual();
+//    const auto processor_count = std::thread::hardware_concurrency();
+//    std::cout << processor_count << std::endl;
+//    compare_counting_to_actual();
+    compare_alternate_counting_to_actual();
 
     return 0;
 }
