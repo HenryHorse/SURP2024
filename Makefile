@@ -4,8 +4,8 @@ BOOST_LIBS = -lboost_graph
 
 all: test
 
-test: test.o graph.o random_trees.o
-	$(CXX) $(CXXFLAGS) -o test test.o graph.o random_trees.o $(BOOST_LIBS)
+test: test.o dynamic_programming.o glauber_dynamics.o random_trees.o
+	$(CXX) $(CXXFLAGS) -o test test.o dynamic_programming.o glauber_dynamics.o random_trees.o $(BOOST_LIBS)
 # Object file compilation
 test.o: test.cpp dynamic_programming.h glauber_dynamics.h random_trees.h
 	$(CXX) $(CXXFLAGS) -c test.cpp

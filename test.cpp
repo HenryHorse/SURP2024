@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    std::vector<int> prufer_sequence = create_prufer_sequence(500, 378912830);
+    std::vector<int> prufer_sequence = create_prufer_sequence(50, 378912830);
     g = prufer_sequence_to_tree(prufer_sequence);
     auto edges = boost::edges(g);
     std::vector<Graph::edge_descriptor> edges_list(edges.first, edges.second);
