@@ -216,14 +216,14 @@ int main(int argc, char *argv[]) {
 
     Graph g;
     double alpha = 1;
-    int T = 10000;
-    double K = 100;
+    int T = 100000;
+    double K = 200;
     double lambda = 1;
     std::random_device rd;
 
 
 
-    std::vector<int> prufer_sequence = create_prufer_sequence(1000, 123421941824);
+    std::vector<int> prufer_sequence = create_prufer_sequence(500, 378912830);
     g = prufer_sequence_to_tree(prufer_sequence);
     auto edges = boost::edges(g);
     std::vector<Graph::edge_descriptor> edges_list(edges.first, edges.second);
