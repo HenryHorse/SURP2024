@@ -7,12 +7,15 @@ all: test
 test: test.o graph.o random_trees.o
 	$(CXX) $(CXXFLAGS) -o test test.o graph.o random_trees.o $(BOOST_LIBS)
 # Object file compilation
-test.o: test.cpp graph.h random_trees.h
+test.o: test.cpp dynamic_programming.h glauber_dynamics.h random_trees.h
 	$(CXX) $(CXXFLAGS) -c test.cpp
-graph.o: graph.cpp graph.h
-	$(CXX) $(CXXFLAGS) -c graph.cpp
+dynamic_programming.o: dynamic_programming.cpp dynamic_programming.h
+	$(CXX) $(CXXFLAGS) -c dynamic_programming.cpp
+glauber_dynamics.o: glauber_dynamics.cpp glauber_dynamics.h
+	$(CXX) $(CXXFLAGS) -c glauber_dynamics.cpp
 random_trees.o: random_trees.cpp random_trees.h
 	$(CXX) $(CXXFLAGS) -c random_trees.cpp
+
 
 clean:
 	rm -f *.o test
