@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     int T = 10000;
     double K = 200;
     double lambda = 1;
-    int n = 10;
+    int n = 256;
     std::random_device rd;
 
 
@@ -56,17 +56,18 @@ int main(int argc, char *argv[]) {
 
 
     // We need to choose a specific seed so that all cores (which don't share memory) have access to the same graph.
-    std::vector<int> prufer_sequence = create_prufer_sequence(n, 378912830);
+    std::vector<int> prufer_sequence = create_prufer_sequence(n, 12781358);
     g = prufer_sequence_to_tree(prufer_sequence);
     auto edges = boost::edges(g);
     std::vector<Graph::edge_descriptor> edges_list(edges.first, edges.second);
     int m = boost::num_edges(g);
 
     if (rank == 0) {
+        std::cout << "Lambda = " << lambda << " n = " << n << " K = " << K << " T = " << T << std::endl;
         std::cout << "Actual Number of Independent Sets: " << num_ind_sets(g, 0, lambda) << std::endl;
     }
 
-    double averaged_alpha = 0;
+    double sum_alpha = 0;
 
     for (int i = 0; i < m; i++) {
         auto edge = edges_list[i];
@@ -102,11 +103,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "World Rank: " << rank << " Sub Rank: " << sub_rank << " Alpha: " << alpha << std::endl;
-    MPI_Reduce(&alpha, &averaged_alpha, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+//    std::cout << "World Rank: " << rank << " Sub Rank: " << sub_rank << " Alpha: " << alpha << std::endl;
+    MPI_Reduce(&alpha, &sum_alpha, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        std::cout << "Averaged Alpha: " << averaged_alpha / epochs << std::endl;
+        std::cout << "Averaged Alpha: " << sum_alpha / (num_processes < epochs ? num_processes : epochs) << std::endl;
     }
 
     MPI_Comm_free(&sub_comm);
