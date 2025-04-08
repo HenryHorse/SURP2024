@@ -1,208 +1,9 @@
 #include "random_trees.h"
-#include "graph.h"
+#include "dynamic_programming.h"
+#include "glauber_dynamics.h"
 #include <thread>
 
 #include <mpi.h>
-
-
-double lambda = 0.001;
-
-void print_set(std::set<int> set) {
-    for (int vertex : set) {
-        std::cout << vertex << " ";
-    }
-}
-
-
-void try_num_ind_sets() {
-    std::random_device rd;
-    std::vector<int> prufer_sequence = create_prufer_sequence(68, 18000);
-    Graph g = prufer_sequence_to_tree(prufer_sequence);
-    std::cout << "Number of independent sets: " << num_ind_sets(g, 0, lambda) << std::endl;
-
-}
-
-void try_prufer_sequence() {
-    std::random_device rd;
-    std::vector<int> prufer_sequence = create_prufer_sequence(1000, rd());
-    print_prufer_sequence(prufer_sequence);
-    Graph g = prufer_sequence_to_tree(prufer_sequence);
-
-    tree_to_dot(g, "random_tree.dot");
-}
-
-void try_glauber_dynamics(const Graph &g) {
-    std::random_device rd;
-    std::set<int> independent_set = glauber_dynamics(g, 1000, rd(), lambda);
-    for (int vertex : independent_set) {
-        std::cout << vertex << " ";
-    }
-    std::cout << std::endl;
-}
-
-void glauber_test1() {
-    Graph g(5);
-    boost::add_edge(0, 1, g);
-    boost::add_edge(0, 2, g);
-    boost::add_edge(1, 3, g);
-    boost::add_edge(1, 4, g);
-
-    std::set<int> independent_set = glauber_dynamics(g, 1000, 1337, lambda);
-    std::set<int> expected_set = {4};
-
-    if (independent_set == expected_set) {
-        std::cout << "Glauber Test 1 Passed" << std::endl;
-    }
-    else {
-        std::cout << "Glauber Test 1 Failed" << std::endl;
-    }
-}
-
-void glauber_test2() {
-    Graph g(11);
-    boost::add_edge(0, 1, g);
-    boost::add_edge(0, 2, g);
-    boost::add_edge(1, 3, g);
-    boost::add_edge(1, 4, g);
-    boost::add_edge(1, 5, g);
-    boost::add_edge(4, 10, g);
-    boost::add_edge(2, 6, g);
-    boost::add_edge(6, 7, g);
-    boost::add_edge(7, 8, g);
-    boost::add_edge(7, 9, g);
-
-    std::set<int> independent_set = glauber_dynamics(g, 1000, 1337, lambda);
-    std::set<int> expected_set = {0, 3, 5};
-
-    if (independent_set == expected_set) {
-        std::cout << "Glauber Test 2 Passed" << std::endl;
-    }
-    else {
-        std::cout << "Glauber Test 2 Failed" << std::endl;
-    }
-}
-
-void glauber_test3() {
-    Graph g(11);
-    boost::add_edge(0, 1, g);
-    boost::add_edge(0, 2, g);
-    boost::add_edge(1, 3, g);
-    boost::add_edge(1, 4, g);
-    boost::add_edge(1, 5, g);
-    boost::add_edge(4, 10, g);
-    boost::add_edge(2, 6, g);
-    boost::add_edge(6, 7, g);
-    boost::add_edge(7, 8, g);
-    boost::add_edge(7, 9, g);
-
-    std::set<int> independent_set = glauber_dynamics(g, 100000, 007, lambda);
-    std::set<int> expected_set = {2, 9, 10};
-
-    if (independent_set == expected_set) {
-        std::cout << "Glauber Test 3 Passed" << std::endl;
-    }
-    else {
-        std::cout << "Glauber Test 3 Failed" << std::endl;
-    }
-}
-
-void glauber_prufer_test() {
-    std::vector<int> prufer_sequence = create_prufer_sequence(100000, 1337);
-    Graph g = prufer_sequence_to_tree(prufer_sequence);
-    tree_to_dot(g, "glauber_prufer.dot");
-
-    std::set<int> independent_set = glauber_dynamics(g, 10000, 1337, lambda);
-    print_set(independent_set);
-    std::set<int> expected_set = {4};
-
-    if (independent_set == expected_set) {
-        std::cout << "Glauber Prufer Test Passed" << std::endl;
-    }
-    else {
-        std::cout << "Glauber Prufer Test Failed" << std::endl;
-    }
-}
-
-
-void compare_counting_to_actual() {
-    std::random_device rd;
-    for (int n = 10; n < 1000; n += 100) {
-        std::vector<int> prufer_sequence = create_prufer_sequence(n, rd());
-        Graph g = prufer_sequence_to_tree(prufer_sequence);
-
-        std::cout << "Tree of Size: " << n << std::endl;
-
-        double actual_num_sets = num_ind_sets(g, 0, lambda);
-        double estimated_num_sets = counting_reduction(g, 10000, 100, lambda);
-
-        std::cout << "Actual Number of Sets: " << actual_num_sets << std::endl;
-        std::cout << "Estimated Number of Sets: " << estimated_num_sets << std::endl;
-        std::cout << "Difference Between Actual and Estimated: " << actual_num_sets - estimated_num_sets << std::endl;
-        std::cout << "Percent Error: " << (abs(actual_num_sets - estimated_num_sets) / actual_num_sets) * 100 << std::endl;
-        std::cout << std::endl;
-
-    }
-
-}
-
-
-void compare_alternate_counting_to_actual() {
-    std::random_device rd;
-    for (int n = 10; n < 1000; n += 100) {
-        std::vector<int> prufer_sequence = create_prufer_sequence(n, rd());
-        Graph g = prufer_sequence_to_tree(prufer_sequence);
-
-        std::cout << "Tree of Size: " << n << std::endl;
-
-        double actual_num_sets = num_ind_sets(g, 0, lambda);
-        alternate_counting_reduction(g, 10000, 100, lambda);
-
-    }
-
-}
-
-
-// int main(int argc, char *argv[]) {
-//     Graph g1(5);
-//     boost::add_edge(0, 1, g1);
-//     boost::add_edge(0, 2, g1);
-//     boost::add_edge(1, 3, g1);
-//     boost::add_edge(1, 4, g1);
-//
-//     Graph g2(11);
-//     boost::add_edge(0, 1, g2);
-//     boost::add_edge(0, 2, g2);
-//     boost::add_edge(1, 3, g2);
-//     boost::add_edge(1, 4, g2);
-//     boost::add_edge(1, 5, g2);
-//     boost::add_edge(4, 10, g2);
-//     boost::add_edge(2, 6, g2);
-//     boost::add_edge(6, 7, g2);
-//     boost::add_edge(7, 8, g2);
-//     boost::add_edge(7, 9, g2);
-//
-//
-// //    tree_to_dot(g1, "g1.dot");
-// //    tree_to_dot(g2, "g2.dot");
-//
-// //    try_num_ind_sets();
-// //    try_prufer_sequence();
-// //    try_glauber_dynamics(g2);
-//
-// //    glauber_test1();
-// //    glauber_test2();
-// //    glauber_test3();
-// //    glauber_prufer_test();
-//
-// //    std::cout << num_ind_sets(g2) << std::endl;
-// //    counting_reduction(g2);
-//
-//
-//     compare_counting_to_actual();
-// //    compare_alternate_counting_to_actual();
-//
-//     return 0;
-// }
 
 
 
@@ -214,94 +15,133 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    int epochs = 5;
+    int color = rank % epochs;
+    MPI_Comm sub_comm;
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &sub_comm);
+
+    int sub_rank, sub_size;
+    MPI_Comm_rank(sub_comm, &sub_rank);
+    MPI_Comm_size(sub_comm, &sub_size);
+
     Graph g;
     double alpha = 1;
-    int T = 10000;
-    double K = 100;
+    int T = 1;
+    double K = 200;
     double lambda = 1;
+    int n = 10;
     std::random_device rd;
 
 
+    // For a concrete example of how my distribution works, let's say I have 5 epochs, 8 processes, and 17 samples.
+    // The distribution will first allocate as many processes as it can for each epoch using MPI_Comm_split. In our example, 3 epochs get 2 processes each, and 2 epochs get 1 process each.
+    // Then, for each epoch, we want to do 17 samples. For each epoch with 2 processes each, one process will do 9 samples, and the other will do 8. For each epoch with 1 process each, each process will do 17 samples.
+    // This way, we can isolate epochs into individual communication groups, and come up with an alpha estimate for each epoch. Then, we can sum up those estimates and average them out.
 
-    std::vector<int> prufer_sequence = create_prufer_sequence(1000, 123421941824);
-    g = prufer_sequence_to_tree(prufer_sequence);
-    auto edges = boost::edges(g);
-    std::vector<Graph::edge_descriptor> edges_list(edges.first, edges.second);
-    int m = boost::num_edges(g);
+    // The completion time is bottlenecked by the process with the highest number of samples, so ideally have the number of processes be evenly divisible by the number of epochs.
 
-    if (rank == 0) {
-        std::cout << num_ind_sets(g, 0, lambda) << std::endl;
+    // This is the number of processes allocated to a given epoch
+    int num_processes_for_epoch;
+    MPI_Comm_size(sub_comm, &num_processes_for_epoch);
+
+    // Given the number of processes for this epoch, this calculates the number of samples for each process.
+    int samples = K;
+    int samples_per_process = samples / num_processes_for_epoch;
+    int extra_samples = samples % num_processes_for_epoch;
+    if (sub_rank < extra_samples) {
+        samples_per_process++;
     }
 
-    for (int i = 0; i < m; i++) {
-        auto edge = edges_list[i];
-        int removed_edge_source = boost::source(edge, g);
-        int removed_edge_target = boost::target(edge, g);
+    if (rank == 0) {
+        std::cout << "Lambda = " << lambda << " K = " << K << std::endl;
+    }
+
+//    std::cout << "Samples per process: " << samples_per_process << std::endl;
+
+    for (n = 2; n < 1024; n *= 2) {
+        std::vector<int> prufer_sequence = create_prufer_sequence(n, 12781358);
+        g = prufer_sequence_to_tree(prufer_sequence);
+        auto edges = boost::edges(g);
+        std::vector<Graph::edge_descriptor> edges_list(edges.first, edges.second);
+        int m = boost::num_edges(g);
 
 
-        boost::remove_edge(edge, g);
-        // If this is the last edge (the Mth edge), alpha is 2^n
-        if (i == edges_list.size() - 1 && rank == 0) {
-            alpha *= pow(2, num_vertices(g));
+        double actual_independent_sets = 0;
+        if (rank == 0) {
+            actual_independent_sets = num_ind_sets(g, 0, lambda);
+//            std::cout << "\nStarting simulation for n = " << n << std::endl;
+//            std::cout << "Actual Number of Independent Sets: " << actual_independent_sets << std::endl;
         }
-        else {
-            int samples_per_process = K / num_processes;
-            int remaining_samples = int(K) % num_processes;
-            double local_invalid_sets = 0;
+        MPI_Bcast(&actual_independent_sets, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-            for (int j = 0; j < samples_per_process; j++) {
-                std::set<int> sample = glauber_dynamics(g, T, rd(), lambda);
-                if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
-                    local_invalid_sets++;
+        bool within_threshold = false;
+
+        T = 1;
+
+        while (!within_threshold) {
+            // We need to choose a specific seed so that all cores (which don't share memory) have access to the same graph.
+            g = prufer_sequence_to_tree(prufer_sequence);
+            auto edges = boost::edges(g);
+            std::vector<Graph::edge_descriptor> edges_list(edges.first, edges.second);
+            int m = boost::num_edges(g);
+
+            double sum_alpha = 0;
+            alpha = 1;
+            for (int i = 0; i < m; i++) {
+                auto edge = edges_list[i];
+                int removed_edge_source = boost::source(edge, g);
+                int removed_edge_target = boost::target(edge, g);
+
+
+                boost::remove_edge(edge, g);
+                // If this is the last edge (the Mth edge), alpha is 2^n
+                if (i == edges_list.size() - 1 && sub_rank == 0) {
+                    alpha *= pow(2, num_vertices(g));
                 }
-            }
+                else {
 
-            if (rank == 0 && remaining_samples > 0) {
-                for (int j = 0; j < remaining_samples; j++) {
-                    std::set<int> sample = glauber_dynamics(g, T, rd(), lambda);
-                    if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
-                        local_invalid_sets++;
+                    double local_invalid_sets = 0;
+                    for (int s = 0; s < samples_per_process; s++) {
+                        std::set<int> sample = glauber_dynamics(g, T, rd(), lambda);
+                        if (sample.find(removed_edge_source) != sample.end() && sample.find(removed_edge_target) != sample.end()) {
+                            local_invalid_sets++;
+                        }
+                    }
+
+                    double total_invalid_sets = 0;
+                    MPI_Reduce(&local_invalid_sets, &total_invalid_sets, 1, MPI_DOUBLE, MPI_SUM, 0, sub_comm);
+
+                    if (sub_rank == 0) {
+                        // The ratio that I multiply alpha by is the number of sets I sampled from Gi+1 that were also independent sets in Gi over the total number of sets I sampled.
+                        alpha *= (K - total_invalid_sets) / K;
+                    }
+                    else {
+                        alpha = 0;
                     }
                 }
             }
 
-            double total_invalid_sets = 0;
-            MPI_Reduce(&local_invalid_sets, &total_invalid_sets, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+        //    std::cout << "World Rank: " << rank << " Sub Rank: " << sub_rank << " Alpha: " << alpha << std::endl;
+            MPI_Reduce(&alpha, &sum_alpha, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
             if (rank == 0) {
-                // The ratio that I multiply alpha by is the number of sets I sampled from Gi+1 that were also independent sets in Gi over the total number of sets I sampled.
-                alpha *= (K - total_invalid_sets) / K;
+                double averaged_alpha = sum_alpha / (num_processes < epochs ? num_processes : epochs);
+
+                if (averaged_alpha <= actual_independent_sets * 1.4) {
+//                    std::cout << "Averaged Alpha: " << averaged_alpha  << std::endl;
+//                    std::cout << "T: " << T << std::endl;
+                    std::cout << T << "," << n << std::endl;
+                    within_threshold = true;
+                }
             }
+
+            MPI_Bcast(&within_threshold, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+            T *= 2;
+
         }
     }
 
+    MPI_Comm_free(&sub_comm);
     MPI_Finalize();
-    if (rank == 0) {
-        std::cout << alpha << std::endl;
-    }
     return 0;
 }
-
-
-// int main() {
-//     std::random_device rd;
-//     std::vector<int> prufer_sequence = create_prufer_sequence(10, rd());
-//     Graph g = prufer_sequence_to_tree(prufer_sequence);
-//     Graph g1;
-//
-//     std::size_t numNodes = boost::num_vertices(g);
-//     std::size_t numEdges = boost::num_edges(g);
-//
-//     std::cout << "Number of nodes: " << numNodes << std::endl;
-//     std::cout << "Number of edges: " << numEdges << std::endl;
-//
-//     tree_to_dot(g, "test.dot");
-//     dot_to_tree("test.dot", g1);
-//
-//
-//     numNodes = boost::num_vertices(g);
-//     numEdges = boost::num_edges(g);
-//
-//     std::cout << "Number of nodes: " << numNodes << std::endl;
-//     std::cout << "Number of edges: " << numEdges << std::endl;
-//
-// }
