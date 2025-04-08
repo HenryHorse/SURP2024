@@ -1,18 +1,9 @@
-# SURP 2024
+# Empirical Support for Algorithmic Conjectures
 
-The provided compilation method is CMake in the form of the CMakeLists.txt file. To compile using CMake, use the following commands after installing CMake. Minor modifications may be needed for Windows.
+This repository is for the code I developed during SURP 2024 and Fall Quarter of 2024. It is code for the Markov Chain Monte Carlo, Glauber dynamics, which randomly samples independent sets on trees. I implemented Glauber dynamics in C++, and wrote code that uses the sampler to estimate the total number of independent sets in a tree. There are two versions of the code for the counter in glauber_dynamics.cpp, using two different methods of estimating the total count. I also wrote code for finding the total number of independent sets in the tree using dynamic programming, in order to compare the Markov chain counter's performance against the actual value. This was intended as empirical evidence of Glauber dynamics' theoretical runtime. 
 
-```sh
-mkdir build
-cd build
-cmake ..
-cmake --build .
-./my_program
-```
+The repository also includes code for randomly generating trees of size n using prufer sequences.
 
-If running via VS Code, ensure that your generated tasks.json file has -std=c++20 as an argument.
+The provided compilation method is the CMake. I did most of my development on MacOS, so the CMake may need reconfiguring for your particular machine.
 
-If you prefer to compile manually rather than through VS Code, you can compile using the following command, assuming you have g++ installed. 
-```sh
-g++ -std=c++20 -g -o hello_world hello_world.cpp
-```
+
